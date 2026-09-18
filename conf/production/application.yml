@@ -1,0 +1,75 @@
+# ============================================================================
+# COMPLETE configuration for the: production environment
+#
+# The platform's runner image copies conf/ to application/ and takes the
+# environment configuration from here. The file is complete on purpose: it does
+# not depend on the application.yml packaged in the jar also being loaded.
+#
+# No secret is written here: everything comes in through an environment variable.
+# ============================================================================
+server:
+  port: 8080
+  shutdown: graceful
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: bank-template-vertical-bank
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
+      connection-timeout: 30000
+  flyway:
+    enabled: true
+    default-schema: ${DB_SCHEMA}
+    schemas: ${DB_SCHEMA}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  cache:
+    type: redis
+
+app:
+  cache:
+    ttl-seconds: ${CACHE_TTL_SECONDS:300}
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    com.justo.bank: INFO

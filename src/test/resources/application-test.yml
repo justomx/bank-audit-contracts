@@ -1,0 +1,27 @@
+# ============================================================================
+# Test profile.
+#
+# The Postgres connection is NOT declared here: it is injected by Testcontainers'
+# @ServiceConnection at runtime, with the container's random port.
+# ============================================================================
+spring:
+  # Redis is turned off in persistence tests so they do not require another
+  # container. Tests that do exercise the cache start their own Redis container.
+  cache:
+    type: none
+  data:
+    redis:
+      repositories:
+        enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    default-schema: public
+    schemas: public
+
+logging:
+  level:
+    root: WARN
+    com.justo.bank: INFO

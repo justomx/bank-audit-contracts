@@ -1,0 +1,26 @@
+target/
+*.class
+*.jar
+*.war
+*.iml
+.idea/
+.vscode/
+.DS_Store
+*.log
+.env
+HELP.md
+# Maven Wrapper
+#
+# The scripts and the .properties file ARE version-controlled: they are what allows
+# building the project without Maven installed, and it is what continuous
+# integration uses.
+#
+# Justo's previous template ignored these three paths because it did not include
+# a wrapper. Keeping that exclusion here breaks the pipeline with
+# "./mvnw: No such file or directory".
+#
+# The only artifact that is NOT version-controlled is the jar, which mvnw downloads
+# on its own (distributionType=only-script does not need it).
+.mvn/wrapper/maven-wrapper.jar
+build/
+.gradle/

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Pre-commit hook — runs before recording each commit.
+#
+# Installation:  make hooks
+# One-off skip (requires justification):  git commit --no-verify
+#
+# Checks two things:
+#   1. That the author identity matches the organization's domain.
+#   2. That the change does not introduce secrets (TDC-001), if gitleaks is available.
+# =============================================================================
+set -uo pipefail
+
+EXPECTED_DOMAIN="justo.mx"
+failures=0
+
+red()   { printf '\033[31m%s\033[0m\n' "$*"; }
+green() { printf '\033[32m%s\033[0m\n' "$*"; }
+
+# -----------------------------------------------------------------------------
+# 1. Author identity
+#
+# Reason: someone working for several organizations from the same team can
+# record a commit with the wrong identity. Once published, the email address
+# stays in the history permanently.
+# -----------------------------------------------------------------------------
+email="$(git config user.email 2>/dev/null || true)"
+
+if [[ -z "$email" ]]; then
+  red "pre-commit: no user.email configured in this repository."
+  echo "  Configuration:  git config user.email your.email@$EXPECTED_DOMAIN"
+  failures=1
+elif [[ "$email" != *"@$EXPECTED_DOMAIN" ]]; then
+  red "pre-commit: the author identity does not match the organization."
+  echo "  Configured : $email"
+  echo "  Expected   : an @$EXPECTED_DOMAIN address"
+  echo
+  echo "  Fix for this repository:"
+  echo "      git config user.email your.email@$EXPECTED_DOMAIN"
+  echo
+  echo "  Permanent per-directory fix, in ~/.gitconfig:"
+  echo "      [includeIf \"gitdir:~/path/to/the/organization/\"]"
+  echo "          path = ~/.gitconfig-organization"
+  failures=1
+fi
+
+# -----------------------------------------------------------------------------
+# 2. Secrets in the staged change (TDC-001)
+# -----------------------------------------------------------------------------
+if command -v gitleaks >/dev/null 2>&1; then
+  if ! gitleaks protect --staged --redact --config .gitleaks.toml --no-banner 2>/dev/null; then
+    red "pre-commit: gitleaks detected a possible secret in the staged change."
+    echo "  A published secret is considered compromised: rotate it,"
+    echo "  not just remove it from the commit."
+    failures=1
+  fi
+else
+  echo "pre-commit: gitleaks is not installed; secret detection is skipped."
+  echo "  Install on macOS:  brew install gitleaks"
+fi
+
+if [[ $failures -ne 0 ]]; then
+  echo
+  red "Commit aborted."
+  exit 1
+fi
+
+green "pre-commit: identity and secrets verified."
+exit 0
