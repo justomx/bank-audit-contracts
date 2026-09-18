@@ -6,278 +6,155 @@
 
     <!--
         ====================================================================
-        Backend service template — Bank vertical (TDC)
+        audit-contracts — standalone library
         ====================================================================
 
-        HARD RULE ABOUT VERSIONS
-        =========================
-        The ONLY library version pinned by hand in this file is the parent's
-        (spring-boot-starter-parent). Everything else (Spring Data JPA,
-        Hibernate, Jackson, HikariCP, the Postgres driver, Tomcat) is resolved
-        by the Spring Boot BOM, which is a set already tested by the Spring team.
-
-        DO NOT add <hibernate.version>, <jackson.version>, or similar. Overriding
-        the BOM produces failures at RUNTIME (NoSuchMethodError), not at compile time.
-
-        The only legitimate exceptions are libraries that Spring Boot does NOT
-        manage: springdoc, spring-cloud-aws, and archunit. Each one is below with
-        its version verified against Boot 3.5.
+        Extracted from the bank-audit-service Maven reactor (see
+        docs/adr/0001-standalone-contracts-library.md). No parent POM: every plugin
+        and dependency version below is pinned by hand and mirrors the versions the
+        reactor's spring-boot-starter-parent (3.5.16) previously resolved for this
+        module, so the build stays reproducible without inheriting from a Spring
+        Boot application that this library is not.
     -->
 
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.16</version>
-        <relativePath/>
-    </parent>
-
-    <!-- INIT: scripts/init-repo.sh replaces artifactId, name, and description -->
     <groupId>com.justo.bank</groupId>
-    <artifactId>bank-template-vertical-bank</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>audit-contracts</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>bank-template-vertical-bank</name>
-    <description>Base template for Bank vertical backend microservices (hexagonal architecture)</description>
+    <name>audit-contracts</name>
+    <description>Shared audit event/record types. No internal dependency: consumed by
+        the audit-client producer library and the audit ingestion worker, which live
+        in other repositories.</description>
 
     <properties>
-        <java.version>21</java.version>
-
-        <!-- Main class. Used by the jar manifest (shade) and conf/*/deploy-properties.json.
-             INIT: scripts/init-repo.sh updates it when renaming the service. -->
-        <application.mainClass>com.justo.bank.template.TemplateApplication</application.mainClass>
-        <!-- Property read by spring-boot-starter-parent's shade configuration -->
-        <start-class>${application.mainClass}</start-class>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <!-- springdoc 2.x is the line compatible with Spring Boot 3.x -->
-        <springdoc.version>2.9.1</springdoc.version>
-        <!-- spring-cloud-aws 3.4.x is the line compatible with Spring Boot 3.5 -->
-        <spring-cloud-aws.version>3.4.2</spring-cloud-aws.version>
+        <junit-jupiter.version>5.12.2</junit-jupiter.version>
         <archunit.version>1.5.0</archunit.version>
-        <!-- jacoco is NOT managed by the Spring Boot BOM: the version is set explicitly -->
+        <!-- jacoco is not managed by any parent here: the version is set explicitly -->
         <jacoco.version>0.8.15</jacoco.version>
+        <!-- maven-enforcer-plugin is not managed by any parent here either -->
+        <enforcer.version>3.5.0</enforcer.version>
 
-        <!--
-             SECURITY PATCH — documented exception to the rule of not touching the BOM.
-             =========================================================================
-             Boot 3.5.16 pins tomcat.version to 10.1.55, which carries three CVEs of
-             CRITICAL severity:
-               CVE-2026-65182  security constraint bypass
-               CVE-2026-65905  DIGEST authentication replay bypass
-               CVE-2026-68525  unauthorized access via FORM bypass
-             In the 10.1.x line they are fixed starting at 10.1.58.
-
-             Why this IS legitimate, when bumping Hibernate by hand is not:
-             the BOM declares `tomcat.version` as a property precisely to allow
-             this kind of advance, and the jump is a PATCH within the same minor
-             version (10.1.x), not a generational change. It is the mechanism
-             documented by Spring Boot in "Customizing Managed Dependencies".
-
-             REMOVE once Spring Boot ships 10.1.58 or higher; from that point on
-             this line stops advancing anything and only gets in the way.
-        -->
-        <tomcat.version>10.1.59</tomcat.version>
-
-        <!--
-             Second security patch, same justification as the previous one.
-             Boot 3.5.16 pins netty.version to 4.1.135.Final, affected by
-             CVE-2026-75595 (CRITICAL). Fixed in 4.1.137.Final.
-
-             Netty arrives transitively through Lettuce, the Redis client.
-
-             REMOVE once Spring Boot ships 4.1.137.Final or higher.
-        -->
-        <netty.version>4.1.138.Final</netty.version>
-
-        <!-- Coverage threshold. Raise it as the service matures; never lower it. -->
+        <!-- Coverage threshold. Raise it as the module matures; never lower it. -->
         <jacoco.line.coverage>0.70</jacoco.line.coverage>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.awspring.cloud</groupId>
-                <artifactId>spring-cloud-aws-dependencies</artifactId>
-                <version>${spring-cloud-aws.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
+    <!-- NO <dependencies> beyond the two test deps below. Pure JDK. This is a
+         load-bearing emptiness: ArchUnit rule C2 asserts it, and any future
+         addition must change that rule deliberately. -->
     <dependencies>
-        <!-- ============================================================
-             WEB + VALIDATION + OBSERVABILITY
-             ============================================================ -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <!-- Structured JSON logs to stdout. Required by the contract with the
-             platform: the log collector does not parse free text. See README > Contract. -->
-        <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
-            <version>8.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc.version}</version>
-        </dependency>
-
-        <!-- ============================================================
-             PERSISTENCE
-             ============================================================ -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-        </dependency>
-
-        <!-- ============================================================
-             CACHE (Redis / ElastiCache)
-             ============================================================ -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId>
-        </dependency>
-
-        <!-- ============================================================
-             AWS — OPT-IN
-             ============================================================
-             The spring-cloud-aws BOM is already imported above, so this pom governs
-             the version. Uncomment ONLY the starters your service uses.
-             An unused starter is attack surface and slower startup.
-
-        <dependency>
-            <groupId>io.awspring.cloud</groupId>
-            <artifactId>spring-cloud-aws-starter-sqs</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.awspring.cloud</groupId>
-            <artifactId>spring-cloud-aws-starter-sns</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.awspring.cloud</groupId>
-            <artifactId>spring-cloud-aws-starter-dynamodb</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.awspring.cloud</groupId>
-            <artifactId>spring-cloud-aws-starter-secrets-manager</artifactId>
-        </dependency>
-        -->
-
-        <!-- ============================================================
-             TEST
-             ============================================================ -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-testcontainers</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Turns the ARCHITECTURE.md rules into a test that breaks the build.
-             See src/test/java/.../architecture/HexagonalArchitectureTest.java -->
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
             <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!--
-                 PLATFORM PACKAGING: "shaded" (flat) jar, NOT Spring Boot's repackage.
-                 ====================================================================================
-                 The justo-java21-spring3x-runner image starts the application with the class named
-                 in conf/<environment>/deploy-properties.json (mainClass field). That requires a flat
-                 jar: Spring Boot's repackage puts the classes under BOOT-INF/classes, and startup by
-                 mainClass would fail with ClassNotFoundException.
-
-                 spring-boot-starter-parent already defines the complete shade configuration in its
-                 pluginManagement, maintained by Spring: it merges spring.factories,
-                 AutoConfiguration.imports, and the service descriptors, and sets the main class
-                 from the start-class property. Here it is only activated.
-
-                 DO NOT redeclare the <transformers>: Maven merges the parent's and child's lists
-                 by position, and the build fails with "Cannot find 'resource' in class
-                 ServicesResourceTransformer".
-            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
                 <configuration>
-                    <!-- avoids generating dependency-reduced-pom.xml at the repository root -->
-                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                    <!-- Kept for parity with what spring-boot-starter-parent gave it -->
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
 
-            <!-- Surefire: unit tests (*Test.java). Run on `mvn test`, no Docker needed. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.6</version>
             </plugin>
 
-            <!-- Failsafe: integration tests (*IT.java). Run on `mvn verify`, require Docker. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.4.1</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.4</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.4</version>
+            </plugin>
+
+            <!-- Attaches a sources jar: a consumer resolving this library from
+                 GitHub Packages should not have to read decompiled bytecode. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
+                        <id>attach-sources</id>
                         <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
+                            <goal>jar-no-fork</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- Coverage. The build FAILS if it drops below the threshold declared in <properties>. -->
+            <!-- Module-boundary gate (ADR-D3, carried over from the reactor): this
+                 module must never depend on its consumers or on Spring. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${enforcer.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-module-boundaries</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>com.justo.bank:audit-client</exclude>
+                                        <exclude>com.justo.bank:audit-ingestion-worker</exclude>
+                                        <exclude>org.springframework:*</exclude>
+                                        <exclude>org.springframework.boot:*</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Coverage. The build fails below the threshold declared above. -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -327,35 +204,15 @@
         </plugins>
     </build>
 
-    <profiles>
-        <!--
-            macOS + Docker Desktop 4.39+: /var/run/docker.sock is a proxy that rejects
-            docker-java's version negotiation. This profile points Testcontainers at
-            the correct socket. On Linux (CI) it is NOT activated.
-        -->
-        <profile>
-            <id>macos-docker-desktop</id>
-            <activation>
-                <os><family>mac</family></os>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <environmentVariables>
-                                <DOCKER_HOST>unix:///var/run/docker.sock</DOCKER_HOST>
-                                <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>/var/run/docker.sock</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
-                            </environmentVariables>
-                            <systemPropertyVariables>
-                                <api.version>1.44</api.version>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+    <!-- Published by DevOps via Jenkins; we never publish from here. Credentials
+         live in Jenkins' own settings.xml under server id "github", never in this
+         repository. See README.md "How consumers resolve it". -->
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/justomx/bank-audit-contracts</url>
+        </repository>
+    </distributionManagement>
 
 </project>

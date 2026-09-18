@@ -1,11 +1,7 @@
 .DEFAULT_GOAL := help
-.PHONY: help init hooks run test test-integration verify build clean arch \
-        infra-up infra-down db-up db-down redis-up redis-down \
-        localstack-up localstack-down \
-        docker-build docker-up docker-down logs swagger deps-tree
+.PHONY: help hooks test arch docs-check verify build install clean deps-tree
 
 MVN := ./mvnw
-DC  := docker compose
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -14,9 +10,6 @@ help: ## List available targets
 # ----------------------------------------------------------------------
 # First use
 # ----------------------------------------------------------------------
-init: ## Adapts the template to the target service (interactive)
-	@bash scripts/init-repo.sh
-
 hooks: ## Installs the git hooks (author identity and secret detection)
 	@git config core.hooksPath .githooks
 	@echo "Hooks active. Manual check: .githooks/pre-commit"
@@ -24,71 +17,26 @@ hooks: ## Installs the git hooks (author identity and secret detection)
 # ----------------------------------------------------------------------
 # Development
 # ----------------------------------------------------------------------
-run: ## Starts the app with the local profile (requires: make infra-up)
-	$(MVN) spring-boot:run -Dspring-boot.run.profiles=local
-
-test: ## Unit tests + architecture rules (fast, no Docker)
+test: ## Unit tests + architecture rules
 	$(MVN) test
 
 arch: ## Only the architecture rules
-	$(MVN) test -Dtest=HexagonalArchitectureTest
+	$(MVN) test -Dtest='*ArchitectureTest' -DfailIfNoTests=false
 
-test-integration: ## Only the integration tests (requires Docker)
-	$(MVN) verify -DskipUnitTests
+docs-check: ## Only the docs-freshness gate (broken links, stale paths)
+	$(MVN) -q test -Dtest=DocsFreshnessTest
 
-verify: ## Everything: unit + integration + coverage threshold
+verify: ## Everything: unit tests, architecture rules, docs, coverage threshold
 	$(MVN) verify
 
 build: ## Packages the jar
 	$(MVN) clean package
 
+install: ## Installs the jar into the local Maven repository
+	$(MVN) install
+
 clean: ## Cleans target/
 	$(MVN) clean
 
-deps-tree: ## Shows which version of each library the Spring Boot BOM resolved
+deps-tree: ## Shows the resolved dependency tree
 	$(MVN) dependency:tree
-
-# ----------------------------------------------------------------------
-# Local infrastructure
-# ----------------------------------------------------------------------
-infra-up: ## Starts Postgres + Redis
-	$(DC) up -d postgres redis
-
-infra-down: ## Stops Postgres + Redis
-	$(DC) stop postgres redis
-
-db-up: ## Only Postgres
-	$(DC) up -d postgres
-
-db-down: ## Stops Postgres
-	$(DC) stop postgres
-
-redis-up: ## Only Redis
-	$(DC) up -d redis
-
-redis-down: ## Stops Redis
-	$(DC) stop redis
-
-localstack-up: ## LocalStack (only if the service uses SQS/SNS/DynamoDB)
-	$(DC) --profile aws up -d localstack
-
-localstack-down: ## Stops LocalStack
-	$(DC) --profile aws stop localstack
-
-# ----------------------------------------------------------------------
-# Docker
-# ----------------------------------------------------------------------
-docker-build: ## Builds the platform image (requires access to Justo's ECR)
-	docker build -f .docker/Dockerfile.api --build-arg VERSION=local -t $$(basename $$PWD):local .
-
-docker-up: ## Starts the full stack
-	$(DC) up -d --build
-
-docker-down: ## Stops the stack and removes the containers
-	$(DC) down
-
-logs: ## Follows the stack's logs
-	$(DC) logs -f
-
-swagger: ## Opens Swagger UI (the app must be running)
-	open http://localhost:8080/swagger-ui.html

@@ -4,6 +4,12 @@ An ADR records **the rationale** behind a decision, not its outcome, which is al
 visible in the code. Its usefulness shows up when, some time later, someone questions
 an existing structure and considers changing it.
 
+## Recorded decisions
+
+| Decision | ADR |
+|---|---|
+| Standalone repository, no parent POM, published to GitHub Packages | [0001](0001-standalone-contracts-library.md) |
+
 ## When to write one
 
 Write an ADR when:

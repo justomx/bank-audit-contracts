@@ -26,7 +26,7 @@ sources of truth that diverge.
 ## What does stay
 
 `branch-name-gate.yml` validates branch names on pull requests, in line with the
-GitFlow model. It comes from Jüsto's previous template and does not take part in
+trunk-based model (`main` is the only long-lived branch). It does not take part in
 building or deploying.
 
 ## Where the quality gates live
@@ -36,13 +36,14 @@ wherever the build is invoked, whether that is Jenkins, a local team, or a hook.
 
 | Gate | Where it is defined | How it runs |
 |---|---|---|
-| 13 architecture rules | `HexagonalArchitectureTest` (ArchUnit) | `./mvnw test` |
+| Module-boundary architecture rules | `AuditContractsArchitectureTest` (ArchUnit) | `./mvnw test` |
+| Dependency bans (`audit-client`, worker, Spring) | `maven-enforcer-plugin` `bannedDependencies` | bound at the `validate` phase, so `./mvnw test`/`verify` |
+| Docs freshness (broken links, stale paths) | `DocsFreshnessTest` | `./mvnw test -Dtest=DocsFreshnessTest` |
 | Coverage threshold | `pom.xml`, JaCoCo plugin | `./mvnw verify` |
-| Integration tests | Testcontainers | `./mvnw verify` |
 | Secret detection | `.gitleaks.toml` | `.githooks/pre-commit` and the gitleaks binary |
 
-It is enough for the Jenkins job to invoke `./mvnw verify` for the first three to
-apply in full.
+It is enough for the Jenkins job to invoke `./mvnw verify` for all of the above except
+secret detection to apply in full.
 
 The platform has confirmed that its jobs additionally incorporate secret scanning and
 dependency vulnerability analysis, so removing the Actions workflows does not mean a

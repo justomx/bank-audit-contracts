@@ -1,0 +1,64 @@
+schema: spec-driven
+artifact_store: openspec
+
+context: |
+  **Project**: audit-contracts (shared record/message types for TDC's audit trail)
+  **Tech Stack**: plain JDK 21 library, no Spring, no framework, no deployable
+  **Architecture**: single-module library, no internal dependency, consumed by
+    audit-client and the audit ingestion worker, both in other repositories
+  **Status**: standalone repository extracted from the bank-audit-service reactor
+    (2026-09-18); see docs/adr/0001-standalone-contracts-library.md
+  **Key Components**: contract/record types under com.justo.bank.audit.contracts
+
+strict_tdd: true
+testing_capabilities_last_updated: "2026-09-18"
+
+rules:
+  proposal:
+    - State whether the change is additive or breaking with respect to already
+      published contract types (see ARCHITECTURE.md "Compatibility")
+  specs:
+    - Use Given/When/Then scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Document schema version impact for any change to a published field
+  design:
+    - Record decisions and their rationale only, target at most ~150 lines; do not
+      restate the proposal or the specs
+    - Durable decisions are promoted to an ADR under docs/adr/ at archive time
+  tasks:
+    - Group by contract type or concern; keep tasks completable in one session
+  apply:
+    guidelines:
+      - Pure JDK only: no new dependency without an explicit request (ARCHITECTURE.md
+        rule C2)
+      - New contract types are immutable records (ARCHITECTURE.md rules C4/C5)
+    tdd: true
+    test_command: "./mvnw verify"
+  verify:
+    test_command: "./mvnw verify"
+    build_command: "./mvnw verify"
+    coverage_threshold: 0.70
+    notes:
+      - "In addition to the normal report, append a '## Verification evidence'
+        section (max 20 lines: date, commit, commands run with observed
+        results, verdict, open warnings) to the change's tasks.md, because
+        verify-report.md is not versioned"
+  archive:
+    - Document why deltas are removed vs. modified
+    - "exploration.md, apply-progress.md, verify-report.md, archive-report.md
+      and state.yaml are local process artifacts ignored by git (see
+      .gitignore); versioned artifacts per change are proposal.md, specs/**,
+      design.md and tasks.md"
+
+projects:
+  - path: "."
+    stack: "Java (plain JDK library)"
+    test_runner: "Maven"
+    test_layers:
+      unit: true
+      integration: false
+      e2e: false
+    coverage_command: "./mvnw verify"
+    linter: ""
+    type_checker: ""
+    formatter: ""

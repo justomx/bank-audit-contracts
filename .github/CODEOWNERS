@@ -1,27 +1,12 @@
 # Code ownership.
 #
-# A team is only honoured as a code owner if it has WRITE access to this repository.
-# Grant it first under Settings > Collaborators and teams. A team named here without
-# access is ignored silently: no error, no warning, and no review is ever requested.
-# The same applies to a team that does not exist.
-#
-# Review scheme: ONE required reviewer. Each path names a single team, so GitHub
-# requests exactly one approval. Listing two teams on a path would require an
-# approval from each of them.
-#
-# Sensitive paths are not reviewed by more people: they are reviewed by a
-# different team. See "Review scheme" in README.md.
-#
-# INIT / PENDING: neither team below exists yet in the justomx organisation. Both
-# follow the naming already in use there — squad-ai, squad-finances, ops-leaders —
-# and match `squad: squad-tdc` and `tribe: bank` in justo-app.properties. They must
-# be requested before this file has any effect. Full list of existing teams:
-# https://github.com/orgs/justomx/teams
+# INIT: replace the teams with the real ones from the justomx org.
+# GitHub requires the owner's review when a PR touches their paths
+# (if branch protection has "Require review from Code Owners" enabled).
 
-*                                     @justomx/squad-tdc
+*                                   @justomx/squad-tdc
 
-# Areas where a mistake is costly. Reviewed by the leads team instead.
-/src/main/resources/db/migration/     @justomx/bank-leaders
-/.github/                             @justomx/bank-leaders
-/pom.xml                              @justomx/bank-leaders
-/ARCHITECTURE.md                      @justomx/bank-leaders
+# Areas where a mistake is costly. Extra review.
+/.github/                            @justomx/bank-leaders
+/pom.xml                             @justomx/bank-leaders
+/ARCHITECTURE.md                     @justomx/bank-leaders
