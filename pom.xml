@@ -21,4 +21,32 @@
     <!-- NO <dependencies>. Pure JDK. This is a load-bearing emptiness: ArchUnit rule
          C2 asserts it, and any future addition must change that rule deliberately. -->
 
+    <build>
+        <plugins>
+            <!-- Module-boundary gate (ADR-D3): version and execution binding come from
+                 the aggregator's pluginManagement; this module supplies its own ban set. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-module-boundaries</id>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>com.justo.bank:audit-client</exclude>
+                                        <exclude>com.justo.bank:audit-ingestion-worker</exclude>
+                                        <exclude>org.springframework:*</exclude>
+                                        <exclude>org.springframework.boot:*</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
