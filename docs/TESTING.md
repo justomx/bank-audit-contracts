@@ -26,6 +26,9 @@ The threshold is defined in `pom.xml` through the `jacoco.line.coverage` propert
 (currently `0.70`). Falling short of it breaks the build. The threshold is raised as
 the module matures and never lowered.
 
+Until the first real contract type exists the check passes vacuously: JaCoCo finds
+nothing to instrument. See TD-07 in [`tech-debt.md`](tech-debt.md).
+
 ## Naming
 
 Tests are named after the observable behavior, not after the method invoked:
