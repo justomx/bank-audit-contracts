@@ -93,5 +93,7 @@ GitFlow model. `feature/*` branches start from `develop` and merge into `develop
 `master` accepts only `release/*` and `hotfix/*`. The restriction is enforced by
 `.github/workflows/branch-name-gate.yml`.
 
-Commit message format: `JUS-123: <imperative description>`. The description is written
+Commit message format: `<TICKET> <type>: <description>`, for example
+`AJTC-110 feat: add the audit event record`. `<type>` is a conventional-commit type
+(`feat`, `fix`, `docs`, `test`, `build`, `chore`, `refactor`). The description is written
 in English.
