@@ -1,0 +1,8 @@
+# Pins the tools for this repository.
+#
+# With sdkman installed, `cd` into the repo and `sdk env` leaves the shell on these
+# versions. `sdk env install` installs whatever is missing.
+#
+# This exists so nobody compiles with the wrong JDK — the most boring bug to diagnose.
+java=21.0.5-tem
+maven=3.9.9
