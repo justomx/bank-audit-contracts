@@ -26,7 +26,7 @@ sources of truth that diverge.
 ## What does stay
 
 `branch-name-gate.yml` validates branch names on pull requests, in line with the
-GitFlow model. It comes from Jüsto's previous template and does not take part in
+trunk-based model (`main` is the only long-lived branch). It does not take part in
 building or deploying.
 
 ## Where the quality gates live

@@ -57,6 +57,25 @@ make docs-check  # AGENTS.md, ARCHITECTURE.md, README.md, CONTEXT.md, and docs/*
                   # have no broken links or stale paths
 ```
 
+## Review before proposing a push
+
+An agent does not propose pushing a branch or opening a pull request until it has
+reviewed its own change. The review is a separate pass over the final diff, not a
+recollection of what was written:
+
+1. `make verify` passes. A failing test is information, never something to disable.
+2. Read the complete diff, file by file. Anything not required by the ticket is
+   removed: leftover debugging, commented-out code, unrelated reformatting.
+3. No secrets, keys, real card data, or personal data — including in tests.
+4. No contract type carries PAN, CVV, NIP, OTP, credentials or keys.
+5. The change respects the rules of `ARCHITECTURE.md` that break the build.
+6. Any area listed under "Mandatory human review" below is flagged explicitly in the
+   pull request description, so the reviewer does not have to discover it.
+
+The findings of this pass are reported to the person. **The agent does not approve its
+own work**: this review does not replace the human reviewer, it is what makes that
+reviewer's time useful.
+
 ## Restrictions
 
 The following actions require an explicit request from a person:
@@ -89,9 +108,10 @@ generation does not change the cost of a mistake in these areas.
 
 ## Branches and commits
 
-GitFlow model. `feature/*` branches start from `develop` and merge into `develop`;
-`master` accepts only `release/*` and `hotfix/*`. The restriction is enforced by
-`.github/workflows/branch-name-gate.yml`.
+Trunk-based development. `main` is the trunk and the only long-lived branch; there is
+no `develop`. Branches start from `main`, stay short-lived, and merge back into `main`.
+A `release/*` branch is cut from `main` for production and accepts stabilization only.
+The restriction is enforced by `.github/workflows/branch-name-gate.yml`.
 
 Commit message format: `<TICKET> <type>: <description>`, for example
 `AJTC-110 feat: add the audit event record`. `<type>` is a conventional-commit type

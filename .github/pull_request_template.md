@@ -15,6 +15,7 @@ Ticket: <!-- JUS-000 -->
 ## Checklist
 
 - [ ] `./mvnw verify` completes successfully locally
+- [ ] The final diff was reviewed in full before opening the PR. If an agent produced the change, the review pass in `AGENTS.md` was run
 - [ ] `domain/` remains free of framework annotations
 - [ ] Every schema change is introduced in a new migration, without editing applied migrations
 - [ ] No dependency versions have been declared in `pom.xml`, except ones Spring Boot does not manage
