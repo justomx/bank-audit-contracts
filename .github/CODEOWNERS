@@ -1,0 +1,12 @@
+# Code ownership.
+#
+# INIT: replace the teams with the real ones from the justomx org.
+# GitHub requires the owner's review when a PR touches their paths
+# (if branch protection has "Require review from Code Owners" enabled).
+
+*                                   @justomx/bank-backend
+
+# Areas where a mistake is costly. Extra review.
+/.github/                            @justomx/bank-leads
+/pom.xml                             @justomx/bank-leads
+/ARCHITECTURE.md                     @justomx/bank-leads
