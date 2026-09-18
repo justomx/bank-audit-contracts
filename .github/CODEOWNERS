@@ -4,7 +4,7 @@
 # GitHub requires the owner's review when a PR touches their paths
 # (if branch protection has "Require review from Code Owners" enabled).
 
-*                                   @justomx/bank-backend
+*                                   @justomx/squad-tdc
 
 # Areas where a mistake is costly. Extra review.
 /.github/                            @justomx/bank-leads
