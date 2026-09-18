@@ -7,6 +7,6 @@
 *                                   @justomx/squad-tdc
 
 # Areas where a mistake is costly. Extra review.
-/.github/                            @justomx/bank-leads
-/pom.xml                             @justomx/bank-leads
-/ARCHITECTURE.md                     @justomx/bank-leads
+/.github/                            @justomx/bank-leaders
+/pom.xml                             @justomx/bank-leaders
+/ARCHITECTURE.md                     @justomx/bank-leaders
