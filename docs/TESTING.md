@@ -13,7 +13,7 @@ integration-test category here.
 
 ## Architecture rules
 
-`AuditContractsArchitectureTest` (rules C1-C5, see `ARCHITECTURE.md`) must stay
+`AuditContractsArchitectureTest` (rules C2, C4, C5, see `ARCHITECTURE.md`) must stay
 non-vacuous: `archRule.failOnEmptyShould=true` in
 `src/test/resources/archunit.properties`, except rule C5, which sets
 `allowEmptyShould(true)` on itself because no public method exists yet in this module.
@@ -35,7 +35,7 @@ Tests are named after the observable behavior, not after the method invoked:
 
 ```java
 @Test
-void c1_no_dependency_on_client_or_worker() { ... }
+void c4_fields_are_final() { ... }
 ```
 
 When continuous integration fails, the test name is the first piece of information

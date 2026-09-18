@@ -36,7 +36,7 @@ which live in other repositories. See
 ## Rules that break the build
 
 Documented in [`ARCHITECTURE.md`](ARCHITECTURE.md) and verified by
-`AuditContractsArchitectureTest` (rules C1-C5) plus the `maven-enforcer-plugin` ban on
+`AuditContractsArchitectureTest` (rules C2, C4, C5) plus the `maven-enforcer-plugin` ban on
 `audit-client`, `audit-ingestion-worker`, and any `org.springframework(.boot)`
 coordinate. Check before considering a change complete: `make arch`.
 

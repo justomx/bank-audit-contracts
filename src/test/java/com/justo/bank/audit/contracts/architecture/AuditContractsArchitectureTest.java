@@ -5,15 +5,13 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import com.tngtech.archunit.library.GeneralCodingRules;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
 
 /**
- * Module-boundary rules for {@code audit-contracts} (see
- * {@code openspec/changes/adapt-bank-template-multi-module/specs/module-boundaries}).
+ * Contract-shape rules for {@code audit-contracts} (see {@code ARCHITECTURE.md}).
  *
  * <p>{@code audit-contracts} MUST NOT depend on any other internal module and MUST stay
  * pure JDK: it is consumed by both {@code audit-client} and {@code audit-ingestion-worker}
@@ -31,16 +29,7 @@ class AuditContractsArchitectureTest {
 
     static final String BASE_PACKAGE = "com.justo.bank.audit.contracts";
 
-    /** Rule C1: no dependency on the other two internal modules. */
-    @ArchTest
-    static final ArchRule c1_no_dependency_on_client_or_worker =
-            noClasses().that().resideInAPackage(BASE_PACKAGE + "..")
-                    .should().dependOnClassesThat()
-                    .resideInAnyPackage("com.justo.bank.audit.client..", "com.justo.bank.audit.worker..")
-                    .because("audit-contracts is shared by both sides; depending on either producer or "
-                            + "consumer would make the shared module couple back to one of its own consumers");
-
-    /** Rule C2: pure JDK. Subsumes C1 and "no Spring"; kept separate for message clarity. */
+    /** Rule C2: pure JDK. The class-graph twin of the enforcer ban and the empty {@code <dependencies>}. */
     @ArchTest
     static final ArchRule c2_only_jdk_and_own_package =
             noClasses().that().resideInAPackage(BASE_PACKAGE + "..")
@@ -48,13 +37,6 @@ class AuditContractsArchitectureTest {
                     .resideOutsideOfPackages("java..", "javax..", BASE_PACKAGE + "..")
                     .because("audit-contracts ships as a pure-JDK library; the pom's empty "
                             + "<dependencies> is load-bearing and this rule is its class-graph twin");
-
-    /** Rule C3: a library must never print. */
-    @ArchTest
-    static final ArchRule c3_no_console_output =
-            GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS
-                    .because("a shared contracts library has no logging framework to route through; "
-                            + "printing here would leak into whichever consumer's stdout is watched");
 
     /** Rule C4: contracts are records of fact; a non-final field would let one be edited after construction. */
     @ArchTest

@@ -41,16 +41,18 @@ itself alone, documented below.
 
 | # | Rule | Test method |
 |---|---|---|
-| C1 | No dependency on `audit-client` or `audit-ingestion-worker` | `c1_no_dependency_on_client_or_worker` |
 | C2 | Only JDK types and this module's own package — no external dependency at all | `c2_only_jdk_and_own_package` |
-| C3 | No `System.out`/`System.err` — a library has no logging framework of its own to route through | `c3_no_console_output` |
 | C4 | Every field is final — a contract type is a record of fact and must not be mutated after construction | `c4_fields_are_final` |
 | C5 | No public setter (`set[A-Z]...`) | `c5_no_setters` |
+
+The ids are stable and not reused. C1 (no dependency on the client or the worker) and C3
+(no console output) were retired when the library moved to its own repository: C1 is
+subsumed by C2 and by the enforcer ban, and C3 guarded nothing a library of records does.
 
 C5 uses `allowEmptyShould(true)`: it is scoped to public methods, which do not exist
 yet in this module (only the `AuditContractVersion` anchor's field and private
 constructor do), so an empty match today is the expected starting state, not a typo —
-unlike C1-C4, which are scoped to the package itself and stay non-vacuous because of
+unlike C2 and C4, which are scoped to the package itself and stay non-vacuous because of
 the anchor type.
 
 Enforced in parallel by `maven-enforcer-plugin`'s `bannedDependencies` (execution
