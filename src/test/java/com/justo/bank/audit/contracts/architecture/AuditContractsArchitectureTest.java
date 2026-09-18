@@ -1,12 +1,15 @@
 package com.justo.bank.audit.contracts.architecture;
 
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
 
 /**
  * Module-boundary rules for {@code audit-contracts} (see
@@ -52,4 +55,28 @@ class AuditContractsArchitectureTest {
             GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS
                     .because("a shared contracts library has no logging framework to route through; "
                             + "printing here would leak into whichever consumer's stdout is watched");
+
+    /** Rule C4: contracts are records of fact; a non-final field would let one be edited after construction. */
+    @ArchTest
+    static final ArchRule c4_fields_are_final =
+            fields().that().areDeclaredInClassesThat().resideInAPackage(BASE_PACKAGE + "..")
+                    .and().doNotHaveModifier(JavaModifier.SYNTHETIC)
+                    .should().beFinal()
+                    .because("a contract type is a record of fact; mutating a field after construction "
+                            + "would falsify the trail it is meant to preserve");
+
+    /**
+     * Rule C5: no setter, ever. Scoped to public methods, which do not exist yet in this
+     * module (only the anchor's field and private constructor do), so {@code allowEmptyShould}
+     * is turned on for this rule alone: the class-level anchor (ADR-D5) guarantees a non-empty
+     * package match, not a non-empty public-method match, and a vacuous match here is the
+     * expected starting state, not a typo.
+     */
+    @ArchTest
+    static final ArchRule c5_no_setters =
+            noMethods().that().areDeclaredInClassesThat().resideInAPackage(BASE_PACKAGE + "..")
+                    .and().arePublic()
+                    .should().haveNameMatching("set[A-Z].*")
+                    .because("a setter would reintroduce the mutability C4 already forbids on fields")
+                    .allowEmptyShould(true);
 }
